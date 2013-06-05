@@ -1,0 +1,33 @@
+"========= Set Shift
+if has("gui_macvim")
+	let macvim_hig_shift_movement = 1
+endif
+"http://www.derekwyatt.org/vim/the-vimrc-file/the-absolute-bare-minimum
+"======= Forget being compatible with good ol' vi
+set nocompatible
+"======= Turn on that syntax highlighting
+syntax on
+set guifont=consolas:h13
+set number
+ab teh the
+set autoindent
+set shiftwidth=4 "Set size of tab
+set tabstop=4
+"======= Default shell
+set shell=/bin/bash
+"======= Folding settings
+"##{{{
+set foldmethod=marker
+set commentstring=##%s
+"set foldexpr=getline(v:lnum)[0]=~'^#'&&getline(v:lnum+1)[0]=~'^#'?'<1':1 "http://stackoverflow.com/questions/5977895/explaining-foldexpr-synt
+set foldnestmax=10      "deepest fold is 10 levels
+"##}}}
+"======= Mappings
+"##{{{
+:let mapleader = "-"
+:nnoremap <leader>ev :vsplit $MYVIMRC<cr>
+"##}}}
+"=======Color
+colorscheme railscasts
+"set transparency=24
+

@@ -1,0 +1,2 @@
+print 'Loading Startup'
+set seq_view, on

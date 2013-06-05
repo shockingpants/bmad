@@ -1,0 +1,817 @@
+#================================
+#		Strtup and open menu
+#================================
+#{{{
+# turn on lights 0 and 1
+light 0 on
+light 1 on
+light 2 off
+light 3 off
+
+# position the stage and axes
+axes location off
+stage location off
+
+# position and turn on menus
+menu main on
+menu graphics on
+after idle { 
+  menu tkcon on 
+} 
+
+menu main move 5 196
+menu graphics move 5 455
+menu tkcon move 800 750
+
+display projection orthographic
+#Atom select macro
+atomselect macro side {sidechain or name CA} 
+
+#}}}
+#===============================
+#    Defaults representation
+#==============================
+mol default style NewCartoon
+mol default color Name
+mol default selection "all and not water and not hydrogen"
+
+#=========================================
+#    Functions/Procedures/Alliases (Jon)
+#=========================================
+##{{{
+#------------------------------
+#		Loading sequences
+#------------------------------
+##{{{
+proc load_sample { {parmtop prot_0wat.parmtop} {traj prod_vac.nc} {skip n} } {
+	##{{{
+	#----------- Load files
+	# Checks for file existence. 
+	if {[catch {loadparm $parmtop}]} {
+			puts "$parmtop does not exist."
+		}
+	if {[catch {loadtraj $traj $skip}]} {
+			puts "$traj does not exist."
+		}
+
+	#----------- Create Reps
+	#====== Delete current reps
+	d
+
+	#====== Get top molid
+	# Get top molid. We will need this info to tell vmd which molecule to add the representations into.
+	# Here, $tp is the molid
+	set tp [molinfo top]
+
+	#====== Add representation
+	###### REP 0 ######
+	mol addrep $tp
+	# Syntax ==> mol [command] [repid] [molid] arguments
+	mol modselect 0 $tp "all and no water"
+	mol mocolor 0 $tp Name
+	mol modstyle 0 $tp NewCartoon
+
+	###### REP 1 ######
+	mol addrep $tp
+	# Syntax ==> mol [command] [repid] [molid] arguments
+	mol modselect 1 $tp "water"
+	mol mocolor 1 $tp Name
+	mol modstyle 1 $tp NewCartoon
+
+	#----------- Smooth trajectory
+	s
+
+	##}}}
+}
+proc loadp53 { {Repeats n} } {
+	##{{{
+	# To load 1ycr like systems only
+	# Source /Volumes/HDD/teojy/simulations/a_Animal_p53/c_MDM2mut_p53/O_Analysis/1ycr_vmdload.tcl
+	#------Load files
+	##{{{
+	if {$Repeats == y} {
+		# Load from within the R_Analysis/.. folder, basically the folder containing 1_Repeat, 2_Repeat...
+		loadparm 1_Repeat/prot_0wat.parmtop
+		if {[catch {loadtraj 1_Repeat/prod_vac.nc 10} results]} {
+			puts $results
+			puts "File does not exist"
+		}
+		if {[catch {loadtraj 2_Repeat/prod_vac.nc 10}]} {
+			puts "File does not exist"
+		}
+		if {[catch {loadtraj 3_Repeat/prod_vac.nc 10}]} {
+			puts "File does not exist"
+		}
+	} else {
+		# Load from within the repeat folder
+		
+		loadtraj
+	}
+	##}}}
+	#----- Creating reps
+	##{{{
+	#====== Remove all current representations
+	d
+	#====== Get top molid
+	# Get top molid
+	set tp [molinfo top]
+
+	#================
+	#    Defaults
+	#================
+
+	mol representation NewCartoon
+	mol color Name
+	mol selection all and not water and not hydrogen
+
+	#================
+	#    REP 0
+	#================
+	#=== First representation, cartoon only
+	mol addrep $tp
+	#=== Hides representation
+	mol showrep $tp 0 off 
+	#=== Delete representation
+	#mol delrep rep_number molecule_number
+	#==============================
+	#      REP 1, Important MDM2, NewCartoon
+	#==============================
+	#==== Adding a representation
+	mol addrep $tp
+
+	#=== Selection
+	#mol modselect 1 $tp (residue 24 to 53 and not hydrogen) \
+	#or (residue 68 to 87 and not hydrogen)
+	mol modselect 1 $tp (residue 0 to 85 and not hydrogen) 
+
+	#=== Color
+	mol modcolor 1 $tp Name
+
+	#=== Drawing method
+	mol modstyle 1 $tp NewCartoon
+
+	#===================================
+	#      REP 2, Important MDM2, lines
+	#===================================
+	mol addrep $tp
+	#mol modselect 2 $tp (residue 24 to 53 and not hydrogen) \
+	#or (residue 68 to 87 and not hydrogen)
+	mol modselect 2 $tp (residue 0 to 85 and not hydrogen) 
+	mol modcolor 2 $tp Name
+	mol modstyle 2 $tp bonds 0.1
+	#====================================
+	#		REP 3, p53, NewCartoon
+	#====================================
+	mol addrep $tp
+	mol modselect 3 $tp (residue 86 to 111 and not hydrogen) 
+	mol modcolor 3 $tp colorid 3
+	mol modstyle 3 $tp NewCartoon
+	#====================================
+	#       REP 4, p53, lines
+	#===================================
+	mol addrep $tp
+	mol modselect 4 $tp (residue 86 to 111 and not hydrogen) 
+	mol modcolor 4 $tp colorid 3
+	mol modstyle 4 $tp bonds 0.1
+	##}}}
+	#----- Smooth all trajectories
+	##{{{
+	s
+	##}}}
+	#------ Creating Labels
+	##{{{
+	# Get top molID
+	set tp [molinfo top]
+	# Y99A
+	lbl 77
+	# Y103
+	lbl 81
+	# p53 Proline
+	lbl 99
+
+	##}}} Creating Labels
+
+	##}}}procs
+}
+proc loadparm { {parmtop prot_0wat.parmtop} } {
+	##{{{
+	# To load
+	mol new $parmtop type "parm7"
+	set name [file tail [pwd]]
+	mol rename [molinfo top] $name
+	##}}}
+}
+proc loadcoord { {coord prot_0wat.inpcrd} } {
+	##{{{
+	mol addfile $coord type "rst7"
+	##}}}
+}
+proc loadtraj { {traj prod_vac.nc} {skip 1} } {
+	##{{{
+	# Usage loadtraj 
+	# Usage2 loadtraj prod_vac.nc 10
+	mol addfile $traj waitfor "-1" step $skip
+	##}}}
+}
+proc loadp { {skip 1} } {
+	##{{{
+	loadparm
+	loadtraj prod_vac.nc $skip
+	##}}}
+}
+proc mesh {} {
+	##{{{
+	#===== Turn everything in top molecule to mesh
+	# Get top molid
+	set tp [molinfo top]
+	# Get number of reps
+	set numrep [molinfo $tp get numreps]
+	for {set i 0} {$i < $numrep} {incr i} {
+		mol modmaterial $i $tp Glass3
+	} 
+	##}}}
+}
+##}}}Loading Sequence
+
+#-------------------------------------------
+#	Generating Selection (Parsing numbers)
+#-------------------------------------------
+##{{{
+proc rangeLen {start end step} {
+    if {$step == 0} {return -1}
+    if {$start == $end} {return 0}
+    if {$step > 0 && $start > $end} {return -1}
+    if {$step < 0 && $end > $start} {return -1}
+    expr {1+((abs($end-$start)-1)/abs($step))}
+ }
+
+proc range args {
+    # Check arity
+    set l [llength $args]
+    if {$l == 1} {
+        set start 0
+        set step 1
+        set end [lindex $args 0]
+    } elseif {$l == 2} {
+        set step 1
+        foreach {start end} $args break
+    } elseif {$l == 3} {
+        foreach {start end step} $args break
+    } else {
+        error {wrong # of args: should be "range ?start? end ?step?"}
+    }
+    # Generate the range
+    set rlen [rangeLen $start $end $step]
+    if {$rlen == -1} {
+        error {invalid (infinite?) range specified}
+    }
+    set result {}
+	# Up to and including number (Jon Changed it) 
+    for {set i 0} {$i <= $rlen} {incr i} {
+        lappend result [expr {$start+($i*$step)}]
+    }
+    return $result
+}
+
+proc parse {strr} {
+    #string index $strr 4 ;# Gets character at position 5
+    set str [join [split $strr " "] ""]; # Removes white spaces
+    set strr [split $str ","]; # splits according to where comma are
+	set text ""
+    foreach i $strr {
+        if {[regexp ".*-.*" $i]} {
+            # This pulls out the numbers with the hyphen
+            regexp {(\d*)-(\d*)} $i matched sub1 sub2; 
+            #set item [range [expr {$sub1-1}] [expr {$sub2-1}]] 
+			set item [range [expr {$sub1}] [expr {$sub2}]]
+        } else {
+            #set item [expr {$i-1}]
+			set item [expr {$i}]
+        }
+    #Append the every item to $text
+        set text "$text $item"
+    }
+	set num [string trim $text " "]
+	set text [join $text " or residue "]
+	set text "residue $text"
+	set text [join $text " "]
+	#string trim $text " "
+	#set text [join [split $text " "] ", "]
+	set result [list $num $text]
+	#lappend result $text
+	return $result
+#lindex $strr index ;# Retrieve the element in a string
+#lsearch -all -inline $strr *-*;# Find all elements in a list that contains a dash
+}
+##}}}
+
+#-------------------------------------------
+# 	Personal functions
+#-------------------------------------------
+proc renumber {offset} {
+	# Renumbers current residue number for whole protein (TOP) with an offset
+	set atm [atomselect top "all"]
+	set resi [$atm get resid]
+	set new_resi {}
+	foreach i $resi {
+		lappend new_resi [expr {$i+$offset}]
+	}
+	$atm set resid $new_resi
+}
+
+proc resinfo {{nam C}} {
+	# Prints resname and resid in current selection. Assumes that every residue has at least one C
+	set atm [atomselect top "name $nam"]
+	puts [$atm get {residue resname}]
+}
+
+proc hl {args} {
+	if {[string length $args]==0} {
+		puts "Usage: hl 80-85."
+		puts "Since code use resid as selection instead of residue, it starts from 1."
+		resinfo
+		puts "Please key in your selection."
+		gets stdin num
+	} else {
+		set num $args
+	}
+	#======== Highlights based on resid
+	set tp [molinfo top]
+	mol addrep $tp
+	set lst [expr {[molinfo top get numreps]-1}]
+	# Extract data out of list returned from parse
+	set sele [lindex [parse $num] 1]
+	set rang [lindex [parse $num] 0]
+	puts $sele
+	puts $rang
+	# Creating the actual representation
+	mol modselect $lst $tp "($sele) and not hydrogen"
+	#mol modcolor $lst $tp Type
+	mol modcolor $lst $tp colorid 1 
+	mol modstyle $lst $tp bonds 0.3
+	s
+	# Creating Labels
+	foreach j $rang {
+	lbl [expr {$j}]
+	}
+}
+
+
+proc lbl {resID} {
+	#==== Label target resid to top residue
+	set molID [molinfo top]
+	set sel1 [atomselect $molID "residue $resID and name C"]
+	set atomID [$sel1 get index]
+	label add Atoms $molID/$atomID
+	label textsize 0.8
+}
+
+proc dl {} {
+	#==== delete all labels in atoms
+	label delete Atoms all
+}
+
+
+proc d {args} {
+	# Get top molid
+	set tp [molinfo top]
+	label delete Atoms all
+	# Get number of reps in top molecule
+	set numrep [molinfo $tp get numreps]
+	set lst [expr {[molinfo top get numreps]-1}]
+	if {$args=="all"} {
+		#=== Delete all reps in top molecule
+		for {set i 0} {$i < $numrep} {incr i} {
+			mol delrep 0 $tp
+		}
+	} else {
+		#=== Delete top rep
+		mol delrep $lst $tp
+	}
+	
+}
+
+proc nw {} {
+	#=== Create a new representation within top molecule
+	# Add rep
+	mol addrep 0
+	# Get top molid
+	set tp [molinfo top]
+	# Get number of reps in top molecule
+	set numrep [molinfo $tp get numreps]
+	# smoothrep by default
+	#mol smoothrep $tp [expr {$numrep-1}]
+}
+
+proc s {{a 10}} {
+	#==== Smooth ALL representations
+	# Get top molid
+	set tp [molinfo top]
+	# Get number of reps in top molecule
+	set numrep [molinfo $tp get numreps]
+	for {set i 0} {$i < $numrep} {incr i} {
+		mol smoothrep $tp $i $a
+	}
+	puts "Smoothing [mol smoothrep $tp 0]"
+}
+
+proc fit {} {
+	# Only works for pairwise
+	# http://www.ks.uiuc.edu/Research/vmd/current/ug/node200.html#15667
+	#set sel1 [molinfo [lindex [molinfo list] 0] get name]
+	#set sel2 [molinfo [lindex [molinfo list] 1] get name]
+	set ref_sel  [atomselect [lindex [molinfo list] 0] "backbone and resid 4 to 10"]
+	set comp_sel [atomselect [lindex [molinfo list] 1] "backbone and resid 4 to 10"]
+	set transformation_mat [measure fit $ref_sel $comp_sel]
+	set move_sel [atomselect [lindex [molinfo list] 0] "all"]
+	$move_sel move $transformation_mat
+}
+
+user add key g {
+	display stereo SideBySide
+}
+
+user add key h {
+	# Hide all labels
+	# [Atoms|Bonds|Angles|Dihedrals]
+	label hide Atoms
+	label hide Bonds
+	label hide Angles
+	label hide Dihedrals
+}
+
+user add key {+} {
+	#Increase speed of animation
+	set current [animate skip]
+	set current [expr {$current+1}]
+	animate skip $current
+	s [expr {$current+9}]
+	puts "skip [animate skip]"
+}
+
+user add key {-} {
+	#Decrease speed of animation
+	set current [animate skip]
+	set current [expr {$current-1}]
+	animate skip $current
+	s [expr {$current+9}]
+	puts "skip [animate skip]"
+
+}
+
+
+interp alias {} guide_vmd {} mvm /Volumes/HDD/teojy/MD_tutorial/VMD_tut/VMD_tut.tcl &
+interp alias {} guide_tcl {} mvm /Volumes/HDD/teojy/MD_tutorial/VMD_tut/VMD_tut.tcl &
+interp alias {} va {} mvm /Users/Jon/.vmdrc &
+##}}}
+#==============================================
+#         User Short Cuts and addons 
+#==============================================
+##{{{
+# http://www.life.umd.edu/biology/sukharevlab/download/vmd_scripts/vmd.rc
+# http://www.life.umd.edu/biology/sukharevlab/download/vmd_scripts/vmd_enhanced_startup_file.htm
+#-----------------------
+#--------HELP-----------
+#-----------------------
+proc h { } {
+	# Help File
+	#{{{
+	# Prints help for keyboard shortcuts to the screen
+	puts "
+# For more options, lookfor ~/.vmdrc.guide
+______________________ Hot Keys (for OpenGL Window): ______________________
+	
+___ Mouse mode ___
+R	enter rotate mode; stop rotation
+T	enter translate mode
+S	enter scaling mode
+C	assign rotation center
+0	query item; show labels menu
+H	hide all labels (JON)
+1	pick atom
+2	pick bond (2 atoms)
+3	pick angle (3 atoms)
+4	pick dihedral (4 atoms)
+5	move atom
+6	move residue
+7	move fragment
+8	move molecule
+9	move highlighted rep
+
+
+___ View ___
+Q	view from positive direction of x axis
+W	view from positive direction of y axis
+E	view from positive direction of z axis
+F	flip view 180º (view from the back of the current view)
+X	spin about x axis
+Y	spin about y axis
+Z	spin about z axis
+J	rotate 2º about x
+K	rotate -2º about x
+L	rotate 2º about y
+#H	rotate -2º about y
+G	Turn on stereoscopic (JON)
+
+
+___ Representations ___
+N	apply preselected graphical representation (new ribbons colored by index)
+I	apply preselected graphical representation (trace colored by index)
+V	set white background and 'exp2' depth cue
+B	set black background without depthcue
+P	switch depthcue on and off
+U	make the selections of the top molecule to auto update each frame
+A	apply representations from the top molecule to all other molecules
+
+___ Additional graphics ___
+O (o)	draw coordinate cylinders in origin (red x, green y, blue z)
+G	draw coordinate greed (red x, green y, blue z). One tick 1Å, small
+	 square 5Å, big square 10Å.
+#D	remove all the graphics added
+
+
+___ Menus ___
+\[	show main menu
+\]	show files menu, and set the current folder as of the top molecule file
+'	show graphics (Graphical Representations) menu
+\\	show sequence menu
+\;	show tkcon Tcl console (Works after the first use of Extensions -> tkcon)
+
+
+___ Animation ___
++	move to next frame
+-	move to previous frame
+. >	play animation forward
+, <	play animation reverse
+/ ?	stop animation
+
+
+___ Modifications ___
+M	move geometry center of the molecule to the origin
+` ~	orient top molecule (not more than 50,000 atoms) by principal axes
+	 (requires Orient script written by Paul Grayson and  linear algebra
+	 package by Hume Integration Software)
+# Following is done from console
+fx	Rotate (flip) protein 180 degrees around x axis (changes coordinates)
+fy	Rotate (flip) protein 180 degrees around y axis (changes coordinates)
+fz	Rotate (flip) protein 180 degrees around z axis (changes coordinates)
+
+______________________ Text Commands (for the console): ______________________
+h	Show this list of Hot keys and Text commands
+pdb	Write current frame of the top file to a pdb file <old_name>_.pdb
+
+________________________________ Jon'Edition__________________________________
+
+D	Delete all reps in top molecule (JON)
+
+"
+#}}}
+}
+#-----------------------
+#--------view-----------
+#-----------------------
+##{{{
+user add key q {
+	#Rotates scene to make a view from X axis, z is up
+	mouse stoprotation
+	rotate x to -90
+	rotate y by -90
+}
+
+user add key w {
+	#Rotates scene to make a view from Y axis, z is up
+	mouse stoprotation
+	rotate z to 180
+	rotate x by -90
+}
+
+user add key e {
+	#Rotates scene to make a view from Z axis, x is to the left
+	mouse stoprotation
+	rotate z to 180
+}
+
+user add key f {
+	#Flips  -  Rotates scene 180 degrees aroynd Y (vertical on screen) axis
+	rotate y by 180
+}
+##}}}
+#---------------------------------
+#-------Representations-----------
+#---------------------------------
+##{{{
+user add key n {
+##{{{
+	#Apply preselected graphical representation
+# 	set viewplist {}
+# 	set fixedlist {}
+	mol delrep 0 top
+	#mol representation Cartoon 2.100000 7.000000 5.000000
+	#mol color Index
+ 	mol representation NewRibbons 1.800000 6.000000 2.600000 0
+#	mol representation NewRibbons 1.800000 3.000000 2.600000 0
+#  	mol representation Trace 0.500000 6.000000
+	mol color ResType
+	mol color Index
+	mol selection {all}
+	mol material Opaque
+	mol addrep top
+	#mol representation Dotted 1.000000 4.000000
+	#mol color Index
+	#mol selection {all}
+	#mol material Opaque
+	#mol addrep top
+# 	lappend viewplist [molinfo top]
+# 	set topmol [molinfo top]
+	# done with molecule 0
+# 	foreach v $viewplist {
+# 	  molinfo $v set {center_matrix rotate_matrix scale_matrix
+# 	global_matrix} $viewpoints($v)
+# 	}
+# 	foreach v $fixedlist {
+# 	  molinfo $v set fixed 1
+# 	}
+# 	unset viewplist
+# 	unset fixedlist
+# 	mol top $topmol
+# 	unset topmol
+	#color Chain {X} blue
+	#color Segname {} blue
+	#color Molecule {C:/Andrey/Mechanosensing/Structure/Membrane_Proteins_of_Known_Structure/PDB_protein_only/1AP9_prt.pdb:000} blue
+# 	color Surface {Grasp} gray
+# 	color change rgb 0 0.0 0.0 1.0
+# 	color change rgb 2 0.34999999404 0.34999999404 0.34999999404
+# 	color change rgb 3 1.0 0.5 0.0
+# 	color change rgb 4 1.0 1.0 0.0
+# 	color change rgb 5 0.5 0.5 0.20000000298
+# 	color change rgb 6 0.600000023842 0.600000023842 0.600000023842
+# 	color change rgb 7 0.0 1.0 0.0
+# 	color change rgb 9 1.0 0.600000023842 0.600000023842
+# 	color change rgb 11 0.649999976158 0.0 0.649999976158
+# 	color change rgb 12 0.5 0.899999976158 0.40000000596
+# 	color change rgb 13 0.899999976158 0.40000000596 0.699999988079
+# 	color change rgb 14 0.5 0.300000011921 0.0
+# 	color change rgb 15 0.5 0.5 0.75
+# 	color change rgb 16 1.0 1.0 1.0
+
+# 	display resetview
+# 	scale by 1.8
+##}}}
+}
+
+user add key i {
+	##{{{
+	#Apply preselected graphical representation
+	mol delrep 0 top
+  	mol representation Trace 0.500000 6.000000
+	mol color ResType
+	mol color Index
+	mol selection {all}
+	mol material Opaque
+	mol addrep top
+	##}}}
+}
+
+user add key v {
+	##{{{
+	#sets white background and exp2 depth cue
+	color Display {Background} white
+	
+	display depthcue   on
+	display cuestart   0.500000
+	display cueend     10.000000
+	display cuedensity 0.400000
+	display cuemode    Exp2
+	##}}}
+}
+user add key b {
+	##{{{
+	#sets black background without depthcue
+	color Display {Background} black
+	
+	display depthcue   off
+	##}}}
+}
+
+user add key p {
+	##{{{
+	#switches depthcue on and off
+	if {[string compare [display get depthcue] on] == 0} {
+		#Switch depthcue off
+		display depthcue off
+	} {
+		#Switch depthcue on
+		display depthcue   on
+# 		display cuestart   0.500000
+# 		display cueend     10.000000
+# 		display cuedensity 0.400000
+# 		display cuemode    Exp2
+	}
+	##}}}
+}
+
+
+user add key u {
+	##{{{
+	#makes the selections of the top molecule to auto update each frame
+	set n [molinfo top get numreps]
+	for {set i 0} {$i < $n} {incr i} {
+	    mol selupdate $i top on
+	}
+	##}}}
+}
+
+user add key a {
+	##{{{
+	# Applies representations from the top molecule to all other molecules
+	# based on save_state script by John Stone
+  set srcmol [molinfo top]
+  foreach mol [molinfo list] {
+    if {$mol == $srcmol} continue
+    #delete current representations
+    set numreps [molinfo $mol get numreps]
+    for {set i 0} {$i < $numreps} {incr i} {
+      mol delrep 0 $mol
+    }
+  }
+  for {set i 0} {$i < [molinfo $srcmol get numreps]} {incr i} {
+    set rep [molinfo $srcmol get "{rep $i} {selection $i} {color $i} {material $i}"]
+    lappend rep [mol showperiodic $srcmol $i]
+    lappend rep [mol numperiodic $srcmol $i]
+    lappend rep [mol showrep $srcmol $i]
+    lappend rep [mol selupdate $i $srcmol]
+    lappend rep [mol colupdate $i $srcmol]
+    lappend rep [mol scaleminmax $srcmol $i]
+    lappend rep [mol smoothrep $srcmol $i]
+    lappend rep [mol drawframes $srcmol $i]
+    foreach mol [molinfo list] {
+      if {$mol == $srcmol} continue
+      foreach {r s c m pbc numpbc on selupd colupd colminmax smooth framespec} $rep { break }
+      eval "mol representation $r"
+      eval "mol color $c"
+      eval "mol selection {$s}"
+      eval "mol material $m"
+      eval "mol addrep $mol"
+      if {[string length $pbc]} {
+        eval "mol showperiodic $mol $i $pbc"
+        eval "mol numperiodic $mol $i $numpbc"
+      }
+      eval "mol selupdate $i $mol $selupd"
+      eval "mol colupdate $i $mol $colupd"
+      eval "mol scaleminmax $mol $i $colminmax"
+      eval "mol smoothrep $mol $i $smooth"
+      eval "mol drawframes $mol $i {$framespec}"
+      if { !$on } {
+        eval "mol showrep $mol $i 0"
+      }
+    }
+  }
+##}}}
+}
+##}}}
+#--------------------
+#----Menus-----------
+#--------------------
+##{{{
+user add key {;} {
+	#Calls tkcon console window to the top (after it was once started from the VMD menu)
+	tkcon show
+}
+
+user add key {'} {
+		menu graphics on
+}
+
+user add key {[} {
+		menu main on
+}
+
+user add key {]} {
+		#Preocedure sets current working folder to the path to the last loaded file of the top molecule
+		catch {cd [file dirname [lindex [lindex [molinfo top get filename] 0] end]]}
+		pwd
+		menu files on
+}
+
+user add key "\\" {
+		menu sequence on
+}
+##}}}
+#---------------------------------
+#---------Modifications-----------
+#---------------------------------
+##{{{
+proc fx { } {
+		# Rotate (flip) protein 180 degrees around x axis
+		[atomselect top all] move [transaxis x 180]
+}
+proc fy { } {
+		# Rotate (flip) protein 180 degrees around y axis
+		[atomselect top all] move [transaxis y 180]
+}
+proc fz { } {
+		# Rotate (flip) protein 180 degrees around z axis
+		[atomselect top all] move [transaxis z 180]
+}
+##}}}
+##}}}
