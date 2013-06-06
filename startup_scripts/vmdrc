@@ -104,7 +104,7 @@ proc loadp53 { {Repeats n} } {
 		}
 	} else {
 		# Load from within the repeat folder
-		
+		loadp53
 		loadtraj
 	}
 	##}}}

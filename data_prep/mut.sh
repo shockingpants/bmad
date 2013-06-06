@@ -1,7 +1,8 @@
 #!/bin/bash
 # mut.sh
 # Mutates target protein
-# Selects the most probably rotamer. EDit accordingly
+# Selects the most probably rotamer. Edit accordingly
+
 
 usage()
 {
@@ -9,6 +10,8 @@ cat << EOF
 usage eg: $0 -i 1ycr.pdb -o prot_mut.pdb -n 24,25 -t TYR
 
 This script mutates target residue in a pdb file.
+Note: -n corresponds to the resi in the file.
+Note2: If there are repeated resi, be sure to adjust the resi so that each residue has a unique resi, else there will be an error!
 
 OPTIONS:
    -h      Show this message
